@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [historySquare, setHistorySquare] = useState([-1]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
@@ -9,10 +10,13 @@ export default function Game() {
   const [isAsc, setIsAsc] = useState(true);
   const changeButtonDesc = isAsc ? 'ASC' : 'DESC';
 
-  function handlePlay(nextSquares) {
+  function handlePlay(idx, nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    const nextCurrentMove = nextHistory.length - 1;
+    const nextHistorySquare = [...historySquare.slice(0, currentMove + 1), idx];
     setHistory(nextHistory);
-    setCurrentMove(nextHistory.length - 1);
+    setCurrentMove(nextCurrentMove);
+    setHistorySquare(nextHistorySquare)
   }
 
   function jumpTo(nextMove) {
@@ -26,11 +30,13 @@ export default function Game() {
   const moves = history.map((squares, move) => {
     let desc;
     let line;
+    let moveInfo;
+    moveInfo = move + ' ' + (move ? '(' + Math.trunc(historySquare[move] / 3) + ', ' + (historySquare[move] % 3) + ')' : '');
     if (move === currentMove) {
-      desc = 'You are at move #' + move;
+      desc = 'You are at move #' + moveInfo;
       line = <div>{desc}</div>;
     } else {
-      desc = move ? 'Go to move #' + move : 'Go to game start';
+      desc = move ? 'Go to move #' + moveInfo : 'Go to game start';
       line = <button onClick={() => jumpTo(move)}>{desc}</button>;
     }
     return (
@@ -43,7 +49,7 @@ export default function Game() {
   return (
     <div className="game">
       <div className="game-board">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
+        <Board currentMove={currentMove} xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
       </div>
       <div className="game-info">
         <button onClick={changeOrder}>{changeButtonDesc}</button>
@@ -53,10 +59,9 @@ export default function Game() {
   )
 }
 
-function Board({ xIsNext, squares, onPlay }) {
+function Board({ currentMove, xIsNext, squares, onPlay }) {
   const maxRow = 3;
   const maxCol = 3;
-
 
   function handleClick(i) {
     if (squares[i] || calculateWinner(squares)) {
@@ -68,13 +73,15 @@ function Board({ xIsNext, squares, onPlay }) {
     } else {
       nextSquares[i] = 'O';
     }
-    onPlay(nextSquares);
+    onPlay(i, nextSquares);
   }
 
   const winner = calculateWinner(squares)
   let status;
   if (winner) {
     status = 'Winner: ' + winner.winner;
+  } else if (currentMove === 9) {
+    status = 'Draw';
   } else {
     status = 'NextPlayer: ' + (xIsNext ? 'X' : 'O');
   }
